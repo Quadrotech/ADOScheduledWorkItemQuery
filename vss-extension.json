@@ -2,13 +2,16 @@
     "manifestVersion": 1,
     "id": "ADOScheduledWorkItemQuery",
     "name": "Scheduled Work Item Query",
-    "version": "0.0.51",
+    "version": "0.0.53",
     "publisher": "Quadrotech",
     "targets": [
         {
             "id": "Microsoft.VisualStudio.Services"
         }
     ],    
+    "galleryFlags": [
+        "Public"
+    ],
     "description": "Sends an E-Mail on a Schedule for Work Item Queries",
     "categories": [
         "Azure Pipelines"
@@ -44,7 +47,7 @@
             "uri": "https://github.com/Quadrotech/ADOScheduledWorkItemQuery"
         },
         "getstarted": {
-            "uri": "https://github.com/Quadrotech/ADOScheduledWorkItemQuery/README.md"
+            "uri": "https://github.com/Quadrotech/ADOScheduledWorkItemQuery"
         },
         "support": {
             "uri": "https://github.com/Quadrotech/ADOScheduledWorkItemQuery/issues"

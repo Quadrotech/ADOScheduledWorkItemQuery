@@ -347,7 +347,13 @@ async function run() {
                     {
                         fields.push("<a href=\"" + orgUrl + "/" + projectId + "/_workItems/edit/" + workItem.fields[fieldName] + "\">" + workItem.fields[fieldName] + "</a>");
                     } else {
-                        fields.push(workItem.fields[fieldName]);
+                        var fieldValue = workItem.fields[fieldName];
+                        if (fieldValue.hasOwnProperty("displayName"))
+                        {
+                            fields.push(fieldValue.displayName);
+                        } else {
+                            fields.push(fieldValue);
+                        }
                     }
                 }
             }
