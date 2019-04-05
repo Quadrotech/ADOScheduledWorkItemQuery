@@ -2,7 +2,7 @@
     "manifestVersion": 1,
     "id": "ADOScheduledWorkItemQuery",
     "name": "Scheduled Work Item Query",
-    "version": "0.0.53",
+    "version": "0.0.54",
     "publisher": "Quadrotech",
     "targets": [
         {
