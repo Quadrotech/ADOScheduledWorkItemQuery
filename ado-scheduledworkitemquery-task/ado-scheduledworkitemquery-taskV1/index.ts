@@ -268,9 +268,22 @@ function getADOConnection() : azdev.WebApi
     }
 }
 
+function convertToBoolean(input: string): boolean | undefined {
+    try {
+        return JSON.parse(input.toLowerCase());
+    }
+    catch (e) {
+        return undefined;
+    }
+}
+
 async function run() {
     try {
         const projectId: string = tl.getInput('project', true);
+        var sendOnEmpty: string = tl.getInput('sendIfEmpty', true);
+
+        var sendOnEmptyBool = convertToBoolean(sendOnEmpty);
+
         var queryId = getQueryId();
         var orgUrl = getOrgUrl();
         
@@ -319,6 +332,15 @@ async function run() {
         {
             let batchRequest = { fields: columnNames, ids: ids };
             workItems = await wit.getWorkItemsBatch(batchRequest);
+        }
+
+        if (ids.length == 0)
+        {
+            if (!sendOnEmptyBool)
+            {
+                tl.setResult(tl.TaskResult.Succeeded, 'Empty Query. Not sending E-Mail.');
+                return;
+            }
         }
 
         let workItemTableStuff : string[][] = []

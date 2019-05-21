@@ -47,3 +47,13 @@ Shared queries can be scheduled without any other authentication, it uses the au
 "My Queries" requires a personal access token or username/password from the person which owns the query. You need to configure an Azure DevOps Endpoint for this to work.
 Note: We recommend generating a Personal Access Token with minimal rights (e.g. only work_item.read scope), and to limit the created Endpoint to a specific pipeline.
 Make sure you don't expose the endpoint for others to use, as this might be a security risk.
+
+# Release Notes
+
+## 2019-05-21
+
+- Add ability to skip sending e-mail when there are no work items in the query
+
+## 2019-04-03 
+
+- Initial Release

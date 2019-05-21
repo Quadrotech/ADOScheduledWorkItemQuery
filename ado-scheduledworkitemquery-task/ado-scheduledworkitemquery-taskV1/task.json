@@ -7,21 +7,39 @@
     "helpMarkDown": "[More Information](https://github.com/Quadrotech/ADOScheduledWorkItemQuery)",
     "category": "Utility",
     "author": "Quadrotech Solutions AG",
-    "releaseNotes": "Initial Version<br/>",
-    "preview": true,
+    "releaseNotes": "- Added ability to suppress sending empty e-mails<br/>",
+    "preview": false,
     "version": {
         "Major": 0,
-        "Minor": 46,
+        "Minor": 57,
         "Patch": 0
     },
     "visibility": [
         "Build"
     ],
+    "groups": [
+          {
+            "name": "emailconnection",
+            "displayName": "Email Connection Settings",
+            "isExpanded": true
+          },
+          {
+            "name": "query",
+            "displayName": "Query Settings",
+            "isExpanded": true
+          },
+          {
+            "name": "email",
+            "displayName": "Email Settings",
+            "isExpanded": true
+          }
+      ],
     "instanceNameFormat": "Send Query Result as E-Mail",
     "inputs": [
         {
             "name": "sendMethod",
             "type": "radio",
+            "groupName": "emailconnection",
             "label": "Send Email with",
             "required": true,
             "defaultValue": "SendGrid",
@@ -34,6 +52,7 @@
         {
             "name": "connectedServiceNameSendGrid",
             "type": "connectedService:sendgrid",
+            "groupName": "emailconnection",
             "label": "SendGrid Connection",
             "required": true,
             "helpMarkDown" : "Service connection to SendGrid",
@@ -42,6 +61,7 @@
         {
             "name": "connectedServiceNameSMTP",
             "type": "connectedService:smtp",
+            "groupName": "emailconnection",
             "label": "SMTP Connection",
             "required": true,
             "helpMarkDown" : "Service connection to SMTP",
@@ -50,6 +70,7 @@
         {
             "name": "project",
             "type": "picklist",
+            "groupName": "query",
             "label": "Project",
             "defaultValue": "",
             "required": true,
@@ -61,6 +82,7 @@
         {
             "name": "queryType",
             "type": "radio",
+            "groupName": "query",
             "label": "Query Type",
             "required": true,
             "defaultValue": "Shared",
@@ -73,6 +95,7 @@
         {
             "name": "query",
             "type": "pickList",
+            "groupName": "query",
             "label": "Choose a Query",
             "defaultValue": "",
             "required": true,
@@ -85,6 +108,7 @@
         {
             "name": "connectedServiceNameAzureDevOps",
             "type": "connectedService:externalTFS",
+            "groupName": "query",
             "label": "Azure DevOps/TFS Connection",
             "required": true,
             "helpMarkDown" : "Service connection to Azure DevOps/TFS",
@@ -93,6 +117,7 @@
         {
             "name": "queryMy",
             "type": "picklist",
+            "groupName": "query",
             "label": "My Query ID",
             "defaultValue": "",
             "required": true,
@@ -103,8 +128,18 @@
             "visibleRule": "queryType=My"
         },
         {
+            "name": "sendIfEmpty",
+            "type": "boolean",
+            "groupName": "email",
+            "label": "Send e-mail on empty result",
+            "defaultValue": "true",
+            "helpMarkDown": "Send e-mail even if the query does not produce any results",
+            "required": "true"
+          },
+        {
             "name": "subject",
             "type": "textbox",
+            "groupName": "email",
             "label": "Subject",
             "defaultValue": "Your query results",
             "required": true,
@@ -113,6 +148,7 @@
         {
             "name": "emailAddresses",
             "type": "multiLine",
+            "groupName": "email",
             "label": "E-Mail Addresses",
             "defaultValue": "",
             "required": true,
@@ -133,7 +169,7 @@
             "parameters": {
                 "project": "$(project)"
             },
-            "endpointUrl": "{{endpoint.url}}/{{{project}}}/_apis/wit/queries?$depth=99&api-version=5.0",
+            "endpointUrl": "{{endpoint.url}}/{{{project}}}/_apis/wit/queries?$depth=2&api-version=5.0",
             "resultSelector": "jsonpath:$..[?(@.isPublic == true && @.queryType)]",
             "resultTemplate": "{ \"Value\" : \"{{{id}}}\", \"DisplayValue\" : \"{{{path}}}\" }"
         },
@@ -143,7 +179,7 @@
             "parameters": {
                 "project": "$(project)"
             },
-            "endpointUrl": "{{endpoint.url}}/{{{project}}}/_apis/wit/queries?$depth=99&api-version=5.0",
+            "endpointUrl": "{{endpoint.url}}/{{{project}}}/_apis/wit/queries?$depth=2&api-version=5.0",
             "resultSelector": "jsonpath:$..[?(@.isPublic == false && @.queryType)]",
             "resultTemplate": "{ \"Value\" : \"{{{id}}}\", \"DisplayValue\" : \"{{{path}}}\" }"
         }
