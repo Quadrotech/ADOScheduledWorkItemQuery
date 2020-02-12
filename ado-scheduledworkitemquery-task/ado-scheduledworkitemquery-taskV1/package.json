@@ -4,21 +4,27 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc",
+    "build:preview": "npm run build",
+    "build:release": "npm run build",
+    "postbuild:preview": "npm run package-extension:preview -- --rev-version",
+    "postbuild:release": "npm run package-extension:release -- --rev-version",
+    "package-extension:preview": "tfx extension create --root ../../ --manifest-globs vss-extension.json vss-extension-test.json --output-path ../../build",
+    "package-extension:release": "tfx extension create --root ../../ --manifest-globs vss-extension.json vss-extension-release.json --output-path ../../build"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@sendgrid/mail": "^6.3.1",
-    "@types/nodemailer": "^4.6.7",
-    "azure-devops-node-api": "^7.0.0",
-    "azure-pipelines-task-lib": "^2.8.0",
+    "@sendgrid/mail": "^6.5.2",
+    "@types/nodemailer": "^6.4.0",
+    "azure-devops-node-api": "^10.0.0",
+    "azure-pipelines-task-lib": "^2.9.3",
     "email-validator": "^2.0.4",
-    "nodemailer": "^6.0.0"
+    "nodemailer": "^6.4.2"
   },
   "devDependencies": {
-    "@types/mocha": "^5.2.6",
-    "@types/node": "^11.11.6",
+    "@types/mocha": "^7.0.1",
+    "@types/node": "^13.7.1",
     "@types/q": "^1.5.2"
   }
 }

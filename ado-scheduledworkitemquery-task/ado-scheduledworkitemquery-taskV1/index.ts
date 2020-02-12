@@ -23,7 +23,7 @@ function getHTMLTable(data: any) {
 
 function getEmailAddresses() : string[]
 {
-    const emailAddresses: string = tl.getInput('emailAddresses', true);
+    let emailAddresses :string = tl.getInput('emailAddresses', true)!;
     var splittedAddresses = emailAddresses.split(/[\s,\n]+/); // Split on space, comma and newline
     
     tl.debug("Splitted Addresses: " + splittedAddresses);
@@ -50,7 +50,7 @@ function validateEmailAddresses(emailAddresses: string[]) : boolean
 function sendMailUsingSendGrid(emailAddresses: string[], html: string)
 {
     tl.debug("Using SendGrid as Transport");
-    var sendGridEndpoint = tl.getInput("connectedServiceNameSendGrid", true);
+    var sendGridEndpoint = tl.getInput("connectedServiceNameSendGrid", true)!;
     var sendGridToken = tl.getEndpointAuthorizationParameter(sendGridEndpoint, "apitoken", false);
 
     var fromEmail = tl.getEndpointAuthorizationParameter(sendGridEndpoint, "senderEmail", false);
@@ -78,7 +78,7 @@ function sendMailUsingSendGrid(emailAddresses: string[], html: string)
 
 function getSMTPTransportOptions() : nodemailer.Transporter
 {
-    var smtpEndpoint = tl.getInput("connectedServiceNameSMTP", true);
+    var smtpEndpoint = tl.getInput("connectedServiceNameSMTP", true)!;
     var scheme = tl.getEndpointAuthorizationScheme(smtpEndpoint, false);
     
     let auth: any;
@@ -91,20 +91,20 @@ function getSMTPTransportOptions() : nodemailer.Transporter
         case "None": {
             tl.debug("Using unauthenticated SMTP as transport");
             auth = undefined;
-            smtpServer = tl.getEndpointAuthorizationParameter(smtpEndpoint, "smtpserverNoAuth", true);
-            smtpPort = Number(tl.getEndpointAuthorizationParameter(smtpEndpoint, "smtpportNoAuth", true));
-            tlsOptions = tl.getEndpointAuthorizationParameter(smtpEndpoint, "tlsOptionsNoAuth", true);
+            smtpServer = tl.getEndpointAuthorizationParameter(smtpEndpoint, "smtpserverNoAuth", true)!;
+            smtpPort = Number(tl.getEndpointAuthorizationParameter(smtpEndpoint, "smtpportNoAuth", true))!;
+            tlsOptions = tl.getEndpointAuthorizationParameter(smtpEndpoint, "tlsOptionsNoAuth", true)!;
             break;
         }
         case "UsernamePassword": {
             tl.debug("Using authenticated SMTP as transport");
-            var username = tl.getEndpointAuthorizationParameter(smtpEndpoint, "username", true);
-            var password = tl.getEndpointAuthorizationParameter(smtpEndpoint, "password", true);
+            var username = tl.getEndpointAuthorizationParameter(smtpEndpoint, "username", true)!;
+            var password = tl.getEndpointAuthorizationParameter(smtpEndpoint, "password", true)!;
             auth = { user: username, pass: password };
 
-            smtpServer = tl.getEndpointAuthorizationParameter(smtpEndpoint, "smtpserverUserPassword", true);
-            smtpPort = Number(tl.getEndpointAuthorizationParameter(smtpEndpoint, "smtpportUserPassword", true));
-            tlsOptions = tl.getEndpointAuthorizationParameter(smtpEndpoint, "tlsOptionsUserPassword", true);
+            smtpServer = tl.getEndpointAuthorizationParameter(smtpEndpoint, "smtpserverUserPassword", true)!;
+            smtpPort = Number(tl.getEndpointAuthorizationParameter(smtpEndpoint, "smtpportUserPassword", true))!;
+            tlsOptions = tl.getEndpointAuthorizationParameter(smtpEndpoint, "tlsOptionsUserPassword", true)!;
             break;
         }
         default: {
@@ -133,8 +133,8 @@ function getSMTPTransportOptions() : nodemailer.Transporter
 
 function getSMTPFrom() : string
 {
-    var smtpEndpoint = tl.getInput("connectedServiceNameSMTP", true);
-    var scheme = tl.getEndpointAuthorizationScheme(smtpEndpoint, false);
+    var smtpEndpoint = tl.getInput("connectedServiceNameSMTP", true)!;
+    var scheme = tl.getEndpointAuthorizationScheme(smtpEndpoint, false)!;
     
     let smtpFromEmail: string;
     let smtpFromName: string;
@@ -143,14 +143,14 @@ function getSMTPFrom() : string
     {
         case "None": {
             tl.debug("Using unauthenticated SMTP as transport");
-            smtpFromEmail = tl.getEndpointAuthorizationParameter(smtpEndpoint, "smtpFromEmailNoAuth", true);
-            smtpFromName = tl.getEndpointAuthorizationParameter(smtpEndpoint, "smtpFromNameNoAuth", true);
+            smtpFromEmail = tl.getEndpointAuthorizationParameter(smtpEndpoint, "smtpFromEmailNoAuth", true)!;
+            smtpFromName = tl.getEndpointAuthorizationParameter(smtpEndpoint, "smtpFromNameNoAuth", true)!;
             break;
         }
         case "UsernamePassword": {
             tl.debug("Using authenticated SMTP as transport");
-            smtpFromEmail = tl.getEndpointAuthorizationParameter(smtpEndpoint, "smtpFromEmailUserPassword", true);
-            smtpFromName = tl.getEndpointAuthorizationParameter(smtpEndpoint, "smtpFromNameUserPassword", true);
+            smtpFromEmail = tl.getEndpointAuthorizationParameter(smtpEndpoint, "smtpFromEmailUserPassword", true)!;
+            smtpFromName = tl.getEndpointAuthorizationParameter(smtpEndpoint, "smtpFromNameUserPassword", true)!;
             break;
         }
         default: {
@@ -171,18 +171,18 @@ async function getQueryResult(connection: azdev.WebApi, projectId: string) : Pro
 
 function getQueryId() : string
 {
-    var queryType: string = tl.getInput('queryType');
+    var queryType: string = tl.getInput('queryType')!;
     let queryId: string;
 
     switch (queryType)
     {
         case "My": {
-            queryId = tl.getInput('queryMy', true);
+            queryId = tl.getInput('queryMy', true)!;
             break;
         }
 
         case "Shared": {
-            queryId = tl.getInput('query', true);
+            queryId = tl.getInput('query', true)!;
             break;
         }
 
@@ -197,17 +197,17 @@ function getQueryId() : string
 
 function getOrgUrl() : string
 {
-    var queryType: string = tl.getInput('queryType');
+    var queryType: string = tl.getInput('queryType')!;
 
     switch (queryType)
     {
         case "My": {
-            var patEndpoint = tl.getInput("connectedServiceNameAzureDevOps", true);
-            return tl.getEndpointUrl(patEndpoint, false);
+            var patEndpoint = tl.getInput("connectedServiceNameAzureDevOps", true)!;
+            return tl.getEndpointUrl(patEndpoint, false)!;
         }
 
         case "Shared": {
-            return tl.getEndpointUrl('SystemVssConnection', false);
+            return tl.getEndpointUrl('SystemVssConnection', false)!;
         }
 
         default: {
@@ -219,29 +219,29 @@ function getOrgUrl() : string
 
 function getADOConnection() : azdev.WebApi
 {
-    var queryType: string = tl.getInput('queryType');
+    var queryType: string = tl.getInput('queryType')!;
 
     switch (queryType)
     {
         case "My": {
-            var patEndpoint = tl.getInput("connectedServiceNameAzureDevOps", true);
-            var scheme = tl.getEndpointAuthorizationScheme(patEndpoint, false);
+            var patEndpoint = tl.getInput("connectedServiceNameAzureDevOps", true)!;
+            var scheme = tl.getEndpointAuthorizationScheme(patEndpoint, false)!;
             var orgUrl = getOrgUrl();
 
             switch (scheme)
             {
                 case "Token":
                 {
-                    const pat = tl.getEndpointAuthorizationParameter(patEndpoint, "apitoken", false);
-                    let authHandler = azdev.getPersonalAccessTokenHandler(pat);
+                    const pat = tl.getEndpointAuthorizationParameter(patEndpoint, "apitoken", false)!;
+                    let authHandler = azdev.getPersonalAccessTokenHandler(pat)!;
                     return new azdev.WebApi(orgUrl, authHandler);
                 }
 
                 case "UsernamePassword":
                 {
-                    const username = tl.getEndpointAuthorizationParameter(patEndpoint, "username", false);
-                    const password = tl.getEndpointAuthorizationParameter(patEndpoint, "password", false);
-                    let authHandler = azdev.getBasicHandler(username, password);
+                    const username = tl.getEndpointAuthorizationParameter(patEndpoint, "username", false)!;
+                    const password = tl.getEndpointAuthorizationParameter(patEndpoint, "password", false)!;
+                    let authHandler = azdev.getBasicHandler(username, password)!;
                     return new azdev.WebApi(orgUrl, authHandler);
                 }
 
@@ -254,10 +254,10 @@ function getADOConnection() : azdev.WebApi
         }
 
         case "Shared": {
-            const token = tl.getEndpointAuthorizationParameter('SystemVssConnection', 'AccessToken', false);
+            const token = tl.getEndpointAuthorizationParameter('SystemVssConnection', 'AccessToken', false)!;
             var orgUrl = getOrgUrl();
             
-            let authHandler = azdev.getBearerHandler(token);
+            let authHandler = azdev.getBearerHandler(token)!;
             return new azdev.WebApi(orgUrl, authHandler);    
         }
 
@@ -279,8 +279,8 @@ function convertToBoolean(input: string): boolean | undefined {
 
 async function run() {
     try {
-        const projectId: string = tl.getInput('project', true);
-        var sendOnEmpty: string = tl.getInput('sendIfEmpty', true);
+        const projectId: string = tl.getInput('project', true)!;
+        var sendOnEmpty: string = tl.getInput('sendIfEmpty', true)!;
 
         var sendOnEmptyBool = convertToBoolean(sendOnEmpty);
 
@@ -328,11 +328,6 @@ async function run() {
         }
 
         let workItems : witif.WorkItem[] = [];
-        if (ids.length > 0)
-        {
-            let batchRequest = { fields: columnNames, ids: ids };
-            workItems = await wit.getWorkItemsBatch(batchRequest);
-        }
 
         if (ids.length == 0)
         {
@@ -340,6 +335,16 @@ async function run() {
             {
                 tl.setResult(tl.TaskResult.Succeeded, 'Empty Query. Not sending E-Mail.');
                 return;
+            }
+        }
+
+        if (ids.length > 0)
+        {
+            while(ids.length)
+            {
+                var chunk = ids.splice(0,200);
+                let batchRequest = { fields: columnNames, ids: chunk };
+                workItems.push(...await wit.getWorkItemsBatch(batchRequest));
             }
         }
 

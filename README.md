@@ -50,6 +50,10 @@ Make sure you don't expose the endpoint for others to use, as this might be a se
 
 # Release Notes
 
+## 2020-02-12
+
+- Support more than 200 results from query
+
 ## 2019-05-21
 
 - Add ability to skip sending e-mail when there are no work items in the query
