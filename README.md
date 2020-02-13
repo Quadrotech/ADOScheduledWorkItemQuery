@@ -50,9 +50,13 @@ Make sure you don't expose the endpoint for others to use, as this might be a se
 
 # Release Notes
 
+## 2020-02-13
+
+- Support ordering of the query (defined in the query) (#10)
+
 ## 2020-02-12
 
-- Support more than 200 results from query
+- Support more than 200 results from query (#5)
 
 ## 2019-05-21
 

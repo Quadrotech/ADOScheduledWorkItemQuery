@@ -23,8 +23,8 @@ function getHTMLTable(data: any) {
 
 function getEmailAddresses() : string[]
 {
-    let emailAddresses :string = tl.getInput('emailAddresses', true)!;
-    var splittedAddresses = emailAddresses.split(/[\s,\n]+/); // Split on space, comma and newline
+    const emailAddresses :string = tl.getInput('emailAddresses', true)!;
+    const splittedAddresses = emailAddresses.split(/[\s,\n]+/); // Split on space, comma and newline
     
     tl.debug("Splitted Addresses: " + splittedAddresses);
     return splittedAddresses;
@@ -32,9 +32,9 @@ function getEmailAddresses() : string[]
 
 function validateEmailAddresses(emailAddresses: string[]) : boolean
 {
-    for (var emailAddressIndex in emailAddresses)
+    for (let emailAddressIndex in emailAddresses)
     {
-        var emailAddress = emailAddresses[emailAddressIndex];
+        const emailAddress = emailAddresses[emailAddressIndex];
 
         tl.debug("Validating E-Mail address: \"" + emailAddress + "\"");
         if (!EmailValidator.validate(emailAddress))
@@ -50,14 +50,14 @@ function validateEmailAddresses(emailAddresses: string[]) : boolean
 function sendMailUsingSendGrid(emailAddresses: string[], html: string)
 {
     tl.debug("Using SendGrid as Transport");
-    var sendGridEndpoint = tl.getInput("connectedServiceNameSendGrid", true)!;
-    var sendGridToken = tl.getEndpointAuthorizationParameter(sendGridEndpoint, "apitoken", false);
+    const sendGridEndpoint = tl.getInput("connectedServiceNameSendGrid", true)!;
+    const sendGridToken = tl.getEndpointAuthorizationParameter(sendGridEndpoint, "apitoken", false);
 
-    var fromEmail = tl.getEndpointAuthorizationParameter(sendGridEndpoint, "senderEmail", false);
-    var fromName = tl.getEndpointAuthorizationParameter(sendGridEndpoint, "senderName", false);
-    var fromFull = fromName + " <" + fromEmail + ">";
+    const fromEmail = tl.getEndpointAuthorizationParameter(sendGridEndpoint, "senderEmail", false);
+    const fromName = tl.getEndpointAuthorizationParameter(sendGridEndpoint, "senderName", false);
+    const fromFull = fromName + " <" + fromEmail + ">";
 
-    var subject = tl.getInput("subject", true);
+    const subject = tl.getInput("subject", true);
 
     const sgMail = require('@sendgrid/mail');
     sgMail.setApiKey(sendGridToken);
@@ -78,8 +78,8 @@ function sendMailUsingSendGrid(emailAddresses: string[], html: string)
 
 function getSMTPTransportOptions() : nodemailer.Transporter
 {
-    var smtpEndpoint = tl.getInput("connectedServiceNameSMTP", true)!;
-    var scheme = tl.getEndpointAuthorizationScheme(smtpEndpoint, false);
+    const smtpEndpoint = tl.getInput("connectedServiceNameSMTP", true)!;
+    const scheme = tl.getEndpointAuthorizationScheme(smtpEndpoint, false);
     
     let auth: any;
     let smtpServer: string;
@@ -98,8 +98,8 @@ function getSMTPTransportOptions() : nodemailer.Transporter
         }
         case "UsernamePassword": {
             tl.debug("Using authenticated SMTP as transport");
-            var username = tl.getEndpointAuthorizationParameter(smtpEndpoint, "username", true)!;
-            var password = tl.getEndpointAuthorizationParameter(smtpEndpoint, "password", true)!;
+            const username = tl.getEndpointAuthorizationParameter(smtpEndpoint, "username", true)!;
+            const password = tl.getEndpointAuthorizationParameter(smtpEndpoint, "password", true)!;
             auth = { user: username, pass: password };
 
             smtpServer = tl.getEndpointAuthorizationParameter(smtpEndpoint, "smtpserverUserPassword", true)!;
@@ -133,8 +133,8 @@ function getSMTPTransportOptions() : nodemailer.Transporter
 
 function getSMTPFrom() : string
 {
-    var smtpEndpoint = tl.getInput("connectedServiceNameSMTP", true)!;
-    var scheme = tl.getEndpointAuthorizationScheme(smtpEndpoint, false)!;
+    const smtpEndpoint = tl.getInput("connectedServiceNameSMTP", true)!;
+    const scheme = tl.getEndpointAuthorizationScheme(smtpEndpoint, false)!;
     
     let smtpFromEmail: string;
     let smtpFromName: string;
@@ -164,14 +164,14 @@ function getSMTPFrom() : string
 
 async function getQueryResult(connection: azdev.WebApi, projectId: string) : Promise<witif.WorkItemQueryResult>
 {
-    var queryId = getQueryId();   
-    let wit: witapi.IWorkItemTrackingApi = await connection.getWorkItemTrackingApi();
+    const queryId = getQueryId();   
+    const wit: witapi.IWorkItemTrackingApi = await connection.getWorkItemTrackingApi();
     return wit.queryById(queryId);
 }
 
 function getQueryId() : string
 {
-    var queryType: string = tl.getInput('queryType')!;
+    const queryType: string = tl.getInput('queryType')!;
     let queryId: string;
 
     switch (queryType)
@@ -197,12 +197,12 @@ function getQueryId() : string
 
 function getOrgUrl() : string
 {
-    var queryType: string = tl.getInput('queryType')!;
+    const queryType: string = tl.getInput('queryType')!;
 
     switch (queryType)
     {
         case "My": {
-            var patEndpoint = tl.getInput("connectedServiceNameAzureDevOps", true)!;
+            const patEndpoint = tl.getInput("connectedServiceNameAzureDevOps", true)!;
             return tl.getEndpointUrl(patEndpoint, false)!;
         }
 
@@ -219,21 +219,21 @@ function getOrgUrl() : string
 
 function getADOConnection() : azdev.WebApi
 {
-    var queryType: string = tl.getInput('queryType')!;
+    const queryType: string = tl.getInput('queryType')!;
 
     switch (queryType)
     {
         case "My": {
-            var patEndpoint = tl.getInput("connectedServiceNameAzureDevOps", true)!;
-            var scheme = tl.getEndpointAuthorizationScheme(patEndpoint, false)!;
-            var orgUrl = getOrgUrl();
+            const patEndpoint = tl.getInput("connectedServiceNameAzureDevOps", true)!;
+            const scheme = tl.getEndpointAuthorizationScheme(patEndpoint, false)!;
+            const orgUrl = getOrgUrl();
 
             switch (scheme)
             {
                 case "Token":
                 {
                     const pat = tl.getEndpointAuthorizationParameter(patEndpoint, "apitoken", false)!;
-                    let authHandler = azdev.getPersonalAccessTokenHandler(pat)!;
+                    const authHandler = azdev.getPersonalAccessTokenHandler(pat)!;
                     return new azdev.WebApi(orgUrl, authHandler);
                 }
 
@@ -241,7 +241,7 @@ function getADOConnection() : azdev.WebApi
                 {
                     const username = tl.getEndpointAuthorizationParameter(patEndpoint, "username", false)!;
                     const password = tl.getEndpointAuthorizationParameter(patEndpoint, "password", false)!;
-                    let authHandler = azdev.getBasicHandler(username, password)!;
+                    const authHandler = azdev.getBasicHandler(username, password)!;
                     return new azdev.WebApi(orgUrl, authHandler);
                 }
 
@@ -255,9 +255,9 @@ function getADOConnection() : azdev.WebApi
 
         case "Shared": {
             const token = tl.getEndpointAuthorizationParameter('SystemVssConnection', 'AccessToken', false)!;
-            var orgUrl = getOrgUrl();
+            const orgUrl = getOrgUrl();
             
-            let authHandler = azdev.getBearerHandler(token)!;
+            const authHandler = azdev.getBearerHandler(token)!;
             return new azdev.WebApi(orgUrl, authHandler);    
         }
 
@@ -280,28 +280,28 @@ function convertToBoolean(input: string): boolean | undefined {
 async function run() {
     try {
         const projectId: string = tl.getInput('project', true)!;
-        var sendOnEmpty: string = tl.getInput('sendIfEmpty', true)!;
+        const sendOnEmpty: string = tl.getInput('sendIfEmpty', true)!;
 
-        var sendOnEmptyBool = convertToBoolean(sendOnEmpty);
+        const sendOnEmptyBool = convertToBoolean(sendOnEmpty);
 
-        var queryId = getQueryId();
-        var orgUrl = getOrgUrl();
+        const queryId = getQueryId();
+        const orgUrl = getOrgUrl();
         
-        var emailAddresses = getEmailAddresses();
+        const emailAddresses = getEmailAddresses();
         if (!validateEmailAddresses(emailAddresses))
         {
             return;
         }
 
-        var connection = getADOConnection();
-        var result = await getQueryResult(connection, projectId);
+        const connection = getADOConnection();
+        const result = await getQueryResult(connection, projectId);
         
-        let wit: witapi.IWorkItemTrackingApi = await connection.getWorkItemTrackingApi();
-        var query = await wit.getQuery(projectId, queryId);
+        const wit: witapi.IWorkItemTrackingApi = await connection.getWorkItemTrackingApi();
+        const query = await wit.getQuery(projectId, queryId);
         
         tl.debug(JSON.stringify(result));
 
-        let ids: number[] = [];
+        const ids: number[] = [];
 
         if (result == null || result.workItems == undefined)
         {
@@ -313,10 +313,10 @@ async function run() {
             ids.push(Number(item.id));
         }
 
-        let columnNames: string[] = [];
+        const columnNames: string[] = [];
         if (result.columns != null)
         {
-            for (var fieldIndex in result.columns)
+            for (let fieldIndex in result.columns)
             {
                 if (result.columns[fieldIndex].referenceName == undefined)
                 {
@@ -326,6 +326,9 @@ async function run() {
                 columnNames.push(result.columns[fieldIndex].referenceName!);
             }
         }
+
+        const workItemTableStuff : string[][] = []
+        workItemTableStuff.push(columnNames);
 
         let workItems : witif.WorkItem[] = [];
 
@@ -342,30 +345,44 @@ async function run() {
         {
             while(ids.length)
             {
-                var chunk = ids.splice(0,200);
-                let batchRequest = { fields: columnNames, ids: chunk };
+                const chunk = ids.splice(0,200);
+                const batchRequest = { fields: columnNames, ids: chunk };
                 workItems.push(...await wit.getWorkItemsBatch(batchRequest));
             }
         }
 
-        let workItemTableStuff : string[][] = []
+        workItems = workItems.filter((a) => a.fields != undefined);
 
-        workItemTableStuff.push(columnNames);
-
-        for (var wi in workItems)
+        if (result.sortColumns != null && result.sortColumns.length > 0)
         {
-            var workItem = workItems[wi];
+            const sortColumn = result.sortColumns[0]!;
+            
+            const field = sortColumn.field!;
+            const referenceName = field.referenceName!;
+            tl.debug("Ordering by " + referenceName + (sortColumn.descending! ? " descending" : " ascending"));
+
+            workItems.sort((a, b) => (a.fields![referenceName].localeCompare(b.fields![referenceName])));
+            
+            if (sortColumn.descending)
+            {
+                workItems = workItems.reverse();
+            }
+        }
+
+        for (let wi in workItems)
+        {
+            const workItem = workItems[wi];
             if (workItem.fields == undefined)
             {
                 continue;
             }
 
-            let fields: string[] = [];
+            const fields: string[] = [];
             for (let field in columnNames)
             {
                 tl.debug(Object.keys(workItem.fields).toString());
 
-                var fieldName = columnNames[field];
+                const fieldName = columnNames[field];
                 if (!workItem.fields[fieldName])
                 {
                     fields.push("");
@@ -374,7 +391,7 @@ async function run() {
                     {
                         fields.push("<a href=\"" + orgUrl + "/" + projectId + "/_workItems/edit/" + workItem.fields[fieldName] + "\">" + workItem.fields[fieldName] + "</a>");
                     } else {
-                        var fieldValue = workItem.fields[fieldName];
+                        const fieldValue = workItem.fields[fieldName];
                         if (fieldValue.hasOwnProperty("displayName"))
                         {
                             fields.push(fieldValue.displayName);
@@ -391,7 +408,7 @@ async function run() {
         let html: string = "Query: <a href=\"" + orgUrl + "/web/qr.aspx?pguid=" + projectId + "&qid=" + queryId + "\">" + query!.path! + "</a><br /><br />";
         html += getHTMLTable(workItemTableStuff);
 
-        var sendMethod = tl.getInput("sendMethod");
+        const sendMethod = tl.getInput("sendMethod");
         switch(sendMethod)
         {
             case "SendGrid": {
@@ -401,13 +418,13 @@ async function run() {
 
             case "SMTP": {
                 tl.debug("Using SMTP as Transport");
-                var transporter = getSMTPTransportOptions();
-                var smtpFrom = getSMTPFrom();
+                const transporter = getSMTPTransportOptions();
+                const smtpFrom = getSMTPFrom();
 
-                var subject = tl.getInput("subject", true);
+                const subject = tl.getInput("subject", true);
                 
                 // setup email data with unicode symbols
-                let mailOptions = {
+                const mailOptions = {
                     from:  smtpFrom, // sender address
                     to: emailAddresses.join(", "),
                     subject: subject, // Subject line
@@ -420,7 +437,7 @@ async function run() {
                 tl.debug("HTML: " + html);
             
                 // send mail with defined transport object
-                let info = await transporter.sendMail(mailOptions, function(error, info) {
+                const info = transporter.sendMail(mailOptions, function(error, info) {
                     if (error) {
                         tl.error(error.message);
                         return tl.setResult(tl.TaskResult.Failed, error.message);

@@ -1,7 +1,7 @@
 {
     "manifestVersion": 1,
     "name": "Scheduled Work Item Query",
-    "version": "0.0.70",
+    "version": "0.0.78",
     "publisher": "Quadrotech",
     "targets": [
         {

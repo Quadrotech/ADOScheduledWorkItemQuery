@@ -8,9 +8,7 @@
 
 ```
 cd ado-scheduledworkitemquery-taskV1
-tsc  (TypeScript compile)
-
-cd ..
-tfx extension create --manifest-globs vss-extension.json vss-extension-test.json
+npm run build:preview
+OR
+npm run build:release
 ```
-
