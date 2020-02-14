@@ -1,14 +1,15 @@
 import tl = require('azure-pipelines-task-lib/task');
-import * as EmailValidator from 'email-validator';
 import * as azdev from "azure-devops-node-api";
 import * as witif from "azure-devops-node-api/interfaces/WorkItemTrackingInterfaces";
 import * as witapi from "azure-devops-node-api/WorkItemTrackingApi"
 import { WorkItemReference } from 'azure-devops-node-api/interfaces/TestInterfaces';
-import nodemailer, { TransportOptions } from "nodemailer";
+import { sendQueryResult, getEmailAddresses, validateEmailAddresses } from './email';
+import { convertToBoolean } from './convertToBoolean';
+import { sortWorkItems } from './sortWorkItems';
 
 "use strict";
 
-function getHTMLTable(data: any) {
+function getHTMLTable(data: string[][]) : string {
     let result = ['<table border=1>'];
     for(let row of data) {
         result.push('<tr>');
@@ -18,151 +19,59 @@ function getHTMLTable(data: any) {
         result.push('</tr>');
     }
     result.push('</table>');
-    return result.join('\n');
+    return result.join('\n')!;
 }
 
-function getEmailAddresses() : string[]
-{
-    const emailAddresses :string = tl.getInput('emailAddresses', true)!;
-    const splittedAddresses = emailAddresses.split(/[\s,\n]+/); // Split on space, comma and newline
-    
-    tl.debug("Splitted Addresses: " + splittedAddresses);
-    return splittedAddresses;
-}
+function getHTMLTableHierarchy(threads: any[][], workItems: Array<{id: number, workItem: witif.WorkItem}>, columns: string[]) : string {
+    let result = ['<table border=1>'];
 
-function validateEmailAddresses(emailAddresses: string[]) : boolean
-{
-    for (let emailAddressIndex in emailAddresses)
-    {
-        const emailAddress = emailAddresses[emailAddressIndex];
+    // Main Header
+    result.push('<tr>');
+    for (let cell of columns) {
+        result.push(`<td>${cell}</td>`);
+    }
+    result.push('</tr>');
 
-        tl.debug("Validating E-Mail address: \"" + emailAddress + "\"");
-        if (!EmailValidator.validate(emailAddress))
-        {
-            tl.setResult(tl.TaskResult.Failed, 'Invalid Email Address: "' + emailAddress + '"');
-            return false;
+    tl.debug(`Work Items:`);
+    tl.debug(JSON.stringify(workItems));
+
+    // Items
+    for (let i = 0; i < threads.length; i++) {
+        let thread = threads[i][0];
+        let threadId = threads[i][1];
+        tl.debug(`Finding ${threadId}`);
+        let workItem = workItems.find(wi => wi.id == threadId)!.workItem;
+
+        // NORMAL ITEM
+        result.push('<tr>');
+        for(let cell of columns){
+            result.push(`<td>${getFieldValue(workItem, cell)}</td>`);
+        }
+        result.push('</tr>');
+
+        // SUBITEMS
+        for (let y = 0; y < thread.length; y++) {
+            result.push('<tr>');
+            // SUBTABLE
+            tl.debug(`Finding Sub: ${thread[y]}`);
+            let subItem = workItems.find(wi => wi.id == thread[y])!.workItem;
+            for(let cell of columns){
+                result.push(`<td>&nbsp;&nbsp;&nbsp;&nbsp;${getFieldValue(subItem, cell)}</td>`);
+            }
+            result.push('</tr>');
         }
     }
 
-    return true;
+    result.push('</table>');
+    return result.join('\n')!;
 }
 
-function sendMailUsingSendGrid(emailAddresses: string[], html: string)
+function getProjectId() : string
 {
-    tl.debug("Using SendGrid as Transport");
-    const sendGridEndpoint = tl.getInput("connectedServiceNameSendGrid", true)!;
-    const sendGridToken = tl.getEndpointAuthorizationParameter(sendGridEndpoint, "apitoken", false);
-
-    const fromEmail = tl.getEndpointAuthorizationParameter(sendGridEndpoint, "senderEmail", false);
-    const fromName = tl.getEndpointAuthorizationParameter(sendGridEndpoint, "senderName", false);
-    const fromFull = fromName + " <" + fromEmail + ">";
-
-    const subject = tl.getInput("subject", true);
-
-    const sgMail = require('@sendgrid/mail');
-    sgMail.setApiKey(sendGridToken);
-    const msg = {
-        to: emailAddresses,
-        from: fromFull,
-        subject: subject,
-        html: html,
-    };
-
-    tl.debug("To: " + msg.to);
-    tl.debug("From: " + msg.from);
-    tl.debug("Subject: " + msg.subject);
-    tl.debug("HTML: " + html);
-
-    sgMail.send(msg);
+    return tl.getInput('project', true)!;
 }
 
-function getSMTPTransportOptions() : nodemailer.Transporter
-{
-    const smtpEndpoint = tl.getInput("connectedServiceNameSMTP", true)!;
-    const scheme = tl.getEndpointAuthorizationScheme(smtpEndpoint, false);
-    
-    let auth: any;
-    let smtpServer: string;
-    let smtpPort: number;
-    let tlsOptions: string;
-
-    switch(scheme)
-    {
-        case "None": {
-            tl.debug("Using unauthenticated SMTP as transport");
-            auth = undefined;
-            smtpServer = tl.getEndpointAuthorizationParameter(smtpEndpoint, "smtpserverNoAuth", true)!;
-            smtpPort = Number(tl.getEndpointAuthorizationParameter(smtpEndpoint, "smtpportNoAuth", true))!;
-            tlsOptions = tl.getEndpointAuthorizationParameter(smtpEndpoint, "tlsOptionsNoAuth", true)!;
-            break;
-        }
-        case "UsernamePassword": {
-            tl.debug("Using authenticated SMTP as transport");
-            const username = tl.getEndpointAuthorizationParameter(smtpEndpoint, "username", true)!;
-            const password = tl.getEndpointAuthorizationParameter(smtpEndpoint, "password", true)!;
-            auth = { user: username, pass: password };
-
-            smtpServer = tl.getEndpointAuthorizationParameter(smtpEndpoint, "smtpserverUserPassword", true)!;
-            smtpPort = Number(tl.getEndpointAuthorizationParameter(smtpEndpoint, "smtpportUserPassword", true))!;
-            tlsOptions = tl.getEndpointAuthorizationParameter(smtpEndpoint, "tlsOptionsUserPassword", true)!;
-            break;
-        }
-        default: {
-            tl.setResult(tl.TaskResult.Failed, "Scheme \"" + scheme + "\" is invalid");
-            throw new Error("Scheme \"" + scheme + "\" is invalid");
-        }
-    }
-    
-    // create reusable transporter object using the default SMTP transport
-    let transporter = nodemailer.createTransport({
-        host: smtpServer,
-        port: smtpPort,
-        secure: tlsOptions == "force",
-        auth: auth,
-        ignoreTLS: tlsOptions == "ignore"
-    });
-
-    tl.debug("Host: " + smtpServer);
-    tl.debug("Port: " + smtpPort);
-    tl.debug("Secure: " + (tlsOptions == "force"));
-    tl.debug("IgnoreTLS: " + auth);
-    tl.debug("Auth: " + (tlsOptions == "ignore"));
-
-    return transporter;
-}
-
-function getSMTPFrom() : string
-{
-    const smtpEndpoint = tl.getInput("connectedServiceNameSMTP", true)!;
-    const scheme = tl.getEndpointAuthorizationScheme(smtpEndpoint, false)!;
-    
-    let smtpFromEmail: string;
-    let smtpFromName: string;
-
-    switch(scheme)
-    {
-        case "None": {
-            tl.debug("Using unauthenticated SMTP as transport");
-            smtpFromEmail = tl.getEndpointAuthorizationParameter(smtpEndpoint, "smtpFromEmailNoAuth", true)!;
-            smtpFromName = tl.getEndpointAuthorizationParameter(smtpEndpoint, "smtpFromNameNoAuth", true)!;
-            break;
-        }
-        case "UsernamePassword": {
-            tl.debug("Using authenticated SMTP as transport");
-            smtpFromEmail = tl.getEndpointAuthorizationParameter(smtpEndpoint, "smtpFromEmailUserPassword", true)!;
-            smtpFromName = tl.getEndpointAuthorizationParameter(smtpEndpoint, "smtpFromNameUserPassword", true)!;
-            break;
-        }
-        default: {
-            tl.setResult(tl.TaskResult.Failed, "Scheme \"" + scheme + "\" is invalid");
-            throw new Error("Scheme \"" + scheme + "\" is invalid");
-        }
-    }
-
-    return smtpFromName + " <" + smtpFromEmail + ">";
-}
-
-async function getQueryResult(connection: azdev.WebApi, projectId: string) : Promise<witif.WorkItemQueryResult>
+async function getQueryResult(connection: azdev.WebApi) : Promise<witif.WorkItemQueryResult>
 {
     const queryId = getQueryId();   
     const wit: witapi.IWorkItemTrackingApi = await connection.getWorkItemTrackingApi();
@@ -268,25 +177,12 @@ function getADOConnection() : azdev.WebApi
     }
 }
 
-function convertToBoolean(input: string): boolean | undefined {
-    try {
-        return JSON.parse(input.toLowerCase());
-    }
-    catch (e) {
-        return undefined;
-    }
-}
-
 async function run() {
     try {
-        const projectId: string = tl.getInput('project', true)!;
-        const sendOnEmpty: string = tl.getInput('sendIfEmpty', true)!;
-
-        const sendOnEmptyBool = convertToBoolean(sendOnEmpty);
-
-        const queryId = getQueryId();
         const orgUrl = getOrgUrl();
-        
+        const projectId = getProjectId();
+        const queryId = getQueryId();
+       
         const emailAddresses = getEmailAddresses();
         if (!validateEmailAddresses(emailAddresses))
         {
@@ -294,196 +190,230 @@ async function run() {
         }
 
         const connection = getADOConnection();
-        const result = await getQueryResult(connection, projectId);
+        const result = await getQueryResult(connection);
         
         const wit: witapi.IWorkItemTrackingApi = await connection.getWorkItemTrackingApi();
         const query = await wit.getQuery(projectId, queryId);
-        
+
         tl.debug(JSON.stringify(result));
 
-        const ids: number[] = [];
-
-        if (result == null || result.workItems == undefined)
+        switch(result.queryResultType)
         {
+            case witif.QueryResultType.WorkItem:
+                tl.debug("QueryResultType.WorkItem")
+                const workItemTableStuff = await getFlatItemWorkItemTable(result, wit);
+                if (workItemTableStuff == undefined)
+                {
+                    return;
+                }
+                
+                let html: string = `Query: <a href="${orgUrl}/web/qr.aspx?pguid=${projectId}&qid=${queryId}">${query!.path!}</a><br /><br />`;
+                html += getHTMLTable(workItemTableStuff);
+
+                sendQueryResult(html, emailAddresses);
+                break;
+            case witif.QueryResultType.WorkItemLink:
+                tl.debug("QueryResultType.WorkItemLink");
+                const tree = await getTree(result, query, wit);
+                const workItems = await getWorkItemsFromTree(result, wit, tree);
+                const columnNames = getColumnNames(result);
+
+                let html2: string = `Query: <a href="${orgUrl}/web/qr.aspx?pguid=${projectId}&qid=${queryId}">${query!.path!}</a><br /><br />`;
+                html2 += getHTMLTableHierarchy(tree, workItems, columnNames);
+
+                sendQueryResult(html2, emailAddresses);
+                break;
+            default:
+                tl.debug(witif.QueryResultType[result.queryResultType!]);
+                return tl.setResult(tl.TaskResult.Failed, "queryResultType " + witif.QueryResultType[result.queryResultType!] + " is not supported. (default)");
+                break;
+        }
+    } catch (err) {
+        tl.setResult(tl.TaskResult.Failed, err.message);
+    }
+}
+
+async function getWorkItemsFromTree(result : witif.WorkItemQueryResult, wit: witapi.IWorkItemTrackingApi, tree : any[][]) : Promise<Array<{id: number, workItem: witif.WorkItem}>>
+{
+    let workItemStuff: Array<{id: number, workItem: witif.WorkItem}> = [];
+
+    let ids: number[] = []
+    for (let i = 0; i < tree.length; i++) {
+        let thread = tree[i][0];
+        ids.push(tree[i][1]);
+        for (let y = 0; y < thread.length; y++) {
+            ids.push(thread[y]);
+        }
+    }
+
+    let uniqueIds = [...new Set(ids)];
+    const columnNames = getColumnNames(result);
+
+    if (uniqueIds.length > 0)
+    {
+        while(uniqueIds.length)
+        {
+            const chunk = uniqueIds.splice(0,200);
+            const batchRequest = { fields: columnNames, ids: chunk };
+            const items = await wit.getWorkItemsBatch(batchRequest);
+
+            for(let item of items as witif.WorkItem[])
+            {
+                workItemStuff.push({id: item.id!, workItem: item});
+            }
+        }
+    }
+
+    return workItemStuff;
+}
+
+
+async function getFlatItemWorkItemTable(result: witif.WorkItemQueryResult, wit: witapi.IWorkItemTrackingApi) : Promise<string[][] | undefined>
+{
+    const ids: number[] = [];
+
+    if (result == null || result.workItems == undefined)
+    {
+        return;
+    }
+
+    for (let item of result.workItems as Array<WorkItemReference>)
+    {
+        ids.push(Number(item.id));
+    }
+
+    const columnNames: string[] = getColumnNames(result);
+    const workItemTableStuff : string[][] = []
+    workItemTableStuff.push(columnNames);
+
+    let workItems : witif.WorkItem[] = [];
+
+    if (ids.length == 0)
+    {
+        const sendOnEmpty: string = tl.getInput('sendIfEmpty', true)!;
+        const sendOnEmptyBool = convertToBoolean(sendOnEmpty);
+
+        if (!sendOnEmptyBool)
+        {
+            tl.setResult(tl.TaskResult.Succeeded, 'Empty Query. Not sending E-Mail.');
             return;
         }
+    }
 
-        for (let item of result.workItems as Array<WorkItemReference>)
+    if (ids.length > 0)
+    {
+        while(ids.length)
         {
-            ids.push(Number(item.id));
+            const chunk = ids.splice(0,200);
+            const batchRequest = { fields: columnNames, ids: chunk };
+            workItems.push(...await wit.getWorkItemsBatch(batchRequest));
+        }
+    }
+
+    workItems = workItems.filter((a) => a.fields != undefined);
+    workItems = sortWorkItems(result, workItems);
+
+    for (let wi in workItems)
+    {
+        const workItem = workItems[wi];
+        if (workItem.fields == undefined)
+        {
+            continue;
         }
 
-        const columnNames: string[] = [];
-        if (result.columns != null)
+        const fields: string[] = [];
+        for (let field in columnNames)
         {
-            for (let fieldIndex in result.columns)
-            {
-                if (result.columns[fieldIndex].referenceName == undefined)
-                {
-                    continue;
-                }
+            tl.debug(Object.keys(workItem.fields).toString());
 
-                columnNames.push(result.columns[fieldIndex].referenceName!);
+            const fieldName = columnNames[field];
+            fields.push(getFieldValue(workItem, fieldName));
+        }
+
+        workItemTableStuff.push(fields);
+    }
+
+    return workItemTableStuff;
+}
+
+function getFieldValue(workItem: witif.WorkItem, fieldName: string) : string
+{
+    if (workItem == undefined)
+    {
+        tl.debug("undefined");
+    }
+
+    if (workItem.fields === undefined)
+    {
+        tl.debug('UNDEFINED');
+        tl.debug(JSON.stringify(workItem));
+    }
+
+    tl.debug(`Field name: ${fieldName}`);
+    if (!workItem.fields![fieldName]) {
+        tl.debug(`Returning empty`);
+        return "";
+    } else {
+        if (fieldName == "System.Id") {
+            tl.debug(`System.Id field!!`);
+            const orgUrl = getOrgUrl();
+            const projectId = getProjectId();
+            return `<a href="${orgUrl}${projectId}/_workItems/edit/${workItem.fields![fieldName]}">${workItem.fields![fieldName]}</a>`;
+        } else {
+            tl.debug(`else`);
+            const fieldValue = workItem.fields![fieldName];
+            if (fieldValue.hasOwnProperty("displayName")) {
+                return fieldValue.displayName;
+            } else {
+                return fieldValue;
             }
         }
+    }
+}
 
-        const workItemTableStuff : string[][] = []
-        workItemTableStuff.push(columnNames);
-
-        let workItems : witif.WorkItem[] = [];
-
-        if (ids.length == 0)
+function getColumnNames(result: witif.WorkItemQueryResult) : string[]
+{
+    const columnNames: string[] = [];
+    if (result.columns != null)
+    {
+        for (let fieldIndex in result.columns)
         {
-            if (!sendOnEmptyBool)
-            {
-                tl.setResult(tl.TaskResult.Succeeded, 'Empty Query. Not sending E-Mail.');
-                return;
-            }
-        }
-
-        if (ids.length > 0)
-        {
-            while(ids.length)
-            {
-                const chunk = ids.splice(0,200);
-                const batchRequest = { fields: columnNames, ids: chunk };
-                workItems.push(...await wit.getWorkItemsBatch(batchRequest));
-            }
-        }
-
-        workItems = workItems.filter((a) => a.fields != undefined);
-
-        if (result.sortColumns != null && result.sortColumns.length > 0)
-        {
-            const sortColumn = result.sortColumns[0]!;
-            
-            const field = sortColumn.field!;
-            const referenceName = field.referenceName!;
-            tl.debug("Ordering by " + referenceName + (sortColumn.descending! ? " descending" : " ascending"));
-
-            workItems.sort((a, b) => 
-                {
-                    tl.debug("Processing field [" + referenceName + "]");
-                    let fieldValueA = a.fields![referenceName];
-                    let fieldValueB = b.fields![referenceName];
-
-                    if (fieldValueA === undefined)
-                    {
-                        return 1;
-                    }
-
-                    if (fieldValueB === undefined)
-                    {
-                        return -1;
-                    }
-
-                    if (typeof(fieldValueA) === "string" && typeof(fieldValueB) === "string") {
-                        return fieldValueA.localeCompare(fieldValueB);
-                    } else if (typeof(fieldValueA) === "number" && (typeof(fieldValueB) === "number")){
-                        return fieldValueA - fieldValueB;
-                    } else if (typeof(fieldValueA) === "object" && fieldValueA.hasOwnProperty("displayName")) {
-                            return fieldValueA.displayName.localeCompare(fieldValueB.displayName);
-                    } else {
-                        return fieldValueA > fieldValueB ? 1 : -1;
-                    }
-                }
-            );
-            
-            if (sortColumn.descending)
-            {
-                workItems = workItems.reverse();
-            }
-        }
-
-        for (let wi in workItems)
-        {
-            const workItem = workItems[wi];
-            if (workItem.fields == undefined)
+            if (result.columns[fieldIndex].referenceName == undefined)
             {
                 continue;
             }
 
-            const fields: string[] = [];
-            for (let field in columnNames)
-            {
-                tl.debug(Object.keys(workItem.fields).toString());
-
-                const fieldName = columnNames[field];
-                if (!workItem.fields[fieldName])
-                {
-                    fields.push("");
-                } else {
-                    if (fieldName == "System.Id")
-                    {
-                        fields.push("<a href=\"" + orgUrl + "/" + projectId + "/_workItems/edit/" + workItem.fields[fieldName] + "\">" + workItem.fields[fieldName] + "</a>");
-                    } else {
-                        const fieldValue = workItem.fields[fieldName];
-                        if (fieldValue.hasOwnProperty("displayName"))
-                        {
-                            fields.push(fieldValue.displayName);
-                        } else {
-                            fields.push(fieldValue);
-                        }
-                    }
-                }
-            }
-
-            workItemTableStuff.push(fields);
-        }
-
-        let html: string = "Query: <a href=\"" + orgUrl + "/web/qr.aspx?pguid=" + projectId + "&qid=" + queryId + "\">" + query!.path! + "</a><br /><br />";
-        html += getHTMLTable(workItemTableStuff);
-
-        const sendMethod = tl.getInput("sendMethod");
-        switch(sendMethod)
-        {
-            case "SendGrid": {
-                sendMailUsingSendGrid(emailAddresses, html);
-                break;
-            }
-
-            case "SMTP": {
-                tl.debug("Using SMTP as Transport");
-                const transporter = getSMTPTransportOptions();
-                const smtpFrom = getSMTPFrom();
-
-                const subject = tl.getInput("subject", true);
-                
-                // setup email data with unicode symbols
-                const mailOptions = {
-                    from:  smtpFrom, // sender address
-                    to: emailAddresses.join(", "),
-                    subject: subject, // Subject line
-                    html: html // html body
-                };
-
-                tl.debug("From: " + mailOptions.from);
-                tl.debug("To: " + mailOptions.to);
-                tl.debug("Subject: " + subject);
-                tl.debug("HTML: " + html);
-            
-                // send mail with defined transport object
-                const info = transporter.sendMail(mailOptions, function(error, info) {
-                    if (error) {
-                        tl.error(error.message);
-                        return tl.setResult(tl.TaskResult.Failed, error.message);
-                    }
-
-                    tl.debug(info.response);
-                });
-
-                break;
-            }
-
-            default: {
-                tl.setResult(tl.TaskResult.Failed, 'Sending through ' + sendMethod + ' is not supported.');
-                return;
-            }
+            columnNames.push(result.columns[fieldIndex].referenceName!);
         }
     }
-    catch (err) {
-        tl.setResult(tl.TaskResult.Failed, err.message);
+
+    return columnNames;
+}
+
+async function getTree(result: witif.WorkItemQueryResult, query: witif.QueryHierarchyItem, wit: witapi.IWorkItemTrackingApi) : Promise<any[][]>
+{
+    let threads: any[][] = [];
+    let thread: number[] = [];
+    for (let item of result.workItemRelations as Array<witif.WorkItemLink>)
+    {
+        if (item.rel == null) {
+            // Start new "Thread"
+            thread = [];
+            threads.push([thread, item.target?.id!]);
+        } else {
+            thread.push(item.target?.id!);
+        }
     }
+
+    for (let i = 0; i < threads.length; i++) {
+        let thread = threads[i][0];
+        tl.debug("Thread: " + threads[i][1]);
+        for (let y = 0; y < thread.length; y++) {
+            tl.debug("Content: " + thread[y]);
+        }
+    }
+
+    return threads;
 }
 
 run();

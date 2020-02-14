@@ -50,6 +50,10 @@ Make sure you don't expose the endpoint for others to use, as this might be a se
 
 # Release Notes
 
+## 2020-02-14
+
+- Initial support for Work Items with direct links queries
+
 ## 2020-02-13
 
 - Support ordering of the query (defined in the query) (#10)
@@ -62,6 +66,6 @@ Make sure you don't expose the endpoint for others to use, as this might be a se
 
 - Add ability to skip sending e-mail when there are no work items in the query
 
-## 2019-04-03 
+## 2019-04-03
 
 - Initial Release

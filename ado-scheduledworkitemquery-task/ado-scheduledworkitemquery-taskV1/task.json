@@ -7,11 +7,11 @@
     "helpMarkDown": "[More Information](https://github.com/Quadrotech/ADOScheduledWorkItemQuery)",
     "category": "Utility",
     "author": "Quadrotech Solutions AG",
-    "releaseNotes": "- Added ability to suppress sending empty e-mails<br/>",
+    "releaseNotes": "See <a href='https://github.com/Quadrotech/ADOScheduledWorkItemQuery'>GitHub</a> for details",
     "preview": false,
     "version": {
         "Major": 0,
-        "Minor": 72,
+        "Minor": 89,
         "Patch": 0
     },
     "visibility": [
