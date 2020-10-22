@@ -250,11 +250,9 @@ async function getWorkItemsFromTree(result : witif.WorkItemQueryResult, wit: wit
             ids.push(thread[y]);
         }
     }
-
     if (ids.length == 0) {
         const sendOnEmpty: string = tl.getInput('sendIfEmpty', true)!;
         const sendOnEmptyBool = convertToBoolean(sendOnEmpty);
-
         if (!sendOnEmptyBool) {
             tl.setResult(tl.TaskResult.Succeeded, 'Empty Query. Not sending E-Mail.');
             return;
