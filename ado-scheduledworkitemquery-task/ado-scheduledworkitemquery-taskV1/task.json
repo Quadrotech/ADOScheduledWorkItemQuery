@@ -11,29 +11,30 @@
     "preview": false,
     "version": {
         "Major": 0,
-        "Minor": 89,
+        "Minor": 90,
         "Patch": 0
     },
     "visibility": [
         "Build"
     ],
-    "groups": [
-          {
-            "name": "emailconnection",
-            "displayName": "Email Connection Settings",
-            "isExpanded": true
-          },
-          {
-            "name": "query",
-            "displayName": "Query Settings",
-            "isExpanded": true
-          },
-          {
-            "name": "email",
-            "displayName": "Email Settings",
-            "isExpanded": true
-          }
-      ],
+  "groups": [
+
+    {
+      "name": "emailconnection",
+      "displayName": "Email Connection Settings",
+      "isExpanded": true
+    },
+    {
+      "name": "query",
+      "displayName": "Query Settings",
+      "isExpanded": true
+    },
+    {
+      "name": "email",
+      "displayName": "Email Settings",
+      "isExpanded": true
+    }
+  ],
     "instanceNameFormat": "Send Query Result as E-Mail",
     "inputs": [
         {

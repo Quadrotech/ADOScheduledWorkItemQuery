@@ -216,6 +216,11 @@ async function run() {
                 tl.debug("QueryResultType.WorkItemLink");
                 const tree = await getTree(result, query, wit);
                 const workItems = await getWorkItemsFromTree(result, wit, tree);
+
+                if (workItems == undefined) {
+                    return;
+                }
+
                 const columnNames = getColumnNames(result);
 
                 let html2: string = `Query: <a href="${orgUrl}/web/qr.aspx?pguid=${projectId}&qid=${queryId}">${query!.path!}</a><br /><br />`;
@@ -233,7 +238,7 @@ async function run() {
     }
 }
 
-async function getWorkItemsFromTree(result : witif.WorkItemQueryResult, wit: witapi.IWorkItemTrackingApi, tree : any[][]) : Promise<Array<{id: number, workItem: witif.WorkItem}>>
+async function getWorkItemsFromTree(result : witif.WorkItemQueryResult, wit: witapi.IWorkItemTrackingApi, tree : any[][]) : Promise<Array<{id: number, workItem: witif.WorkItem}> | undefined>
 {
     let workItemStuff: Array<{id: number, workItem: witif.WorkItem}> = [];
 
@@ -243,6 +248,14 @@ async function getWorkItemsFromTree(result : witif.WorkItemQueryResult, wit: wit
         ids.push(tree[i][1]);
         for (let y = 0; y < thread.length; y++) {
             ids.push(thread[y]);
+        }
+    }
+    if (ids.length == 0) {
+        const sendOnEmpty: string = tl.getInput('sendIfEmpty', true)!;
+        const sendOnEmptyBool = convertToBoolean(sendOnEmpty);
+        if (!sendOnEmptyBool) {
+            tl.setResult(tl.TaskResult.Succeeded, 'Empty Query. Not sending E-Mail.');
+            return;
         }
     }
 
