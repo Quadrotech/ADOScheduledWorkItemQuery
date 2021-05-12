@@ -20,7 +20,7 @@
     "azure-devops-node-api": "^10.0.0",
     "azure-pipelines-task-lib": "^2.9.3",
     "email-validator": "^2.0.4",
-    "nodemailer": "^6.4.2"
+    "nodemailer": "^6.4.16"
   },
   "devDependencies": {
     "@types/mocha": "^7.0.1",
