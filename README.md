@@ -1,3 +1,10 @@
+# NOTE
+This project has moved to 
+https://github.com/techfreakado/ADOScheduledWorkItemQuery
+
+This repository is now considered legacy and archived.
+
+
 # Azure DevOps Schedule Work Item Query
 
 ## Introduction
